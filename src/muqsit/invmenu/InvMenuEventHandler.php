@@ -10,6 +10,7 @@ use muqsit\invmenu\session\PlayerWindowDispatcher;
 use pocketmine\event\inventory\InventoryCloseEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
+use pocketmine\event\server\DataPacketDecodeEvent;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\network\mcpe\protocol\ContainerClosePacket;
@@ -21,6 +22,22 @@ final class InvMenuEventHandler implements Listener{
 	public function __construct(
 		readonly private PlayerManager $player_manager
 	){}
+
+    /**
+     * @param DataPacketDecodeEvent $event
+     * @priority NORMAL
+     * @handleCancelled
+     */
+    public function onDataPacketDecode(DataPacketDecodeEvent $event) : void{
+        $packet_id = $event->getPacketId();
+        if(
+            $packet_id === NetworkStackLatencyPacket::NETWORK_ID ||
+            $packet_id === ContainerClosePacket::NETWORK_ID ||
+            $packet_id === PacketViolationWarningPacket::NETWORK_ID
+        ){
+            $event->uncancel();
+        }
+    }
 
 	/**
 	 * @param DataPacketReceiveEvent $event
@@ -35,9 +52,8 @@ final class InvMenuEventHandler implements Listener{
 			}
 		}elseif($packet instanceof ContainerClosePacket){
 			// these are not magic numbers. 255 (windowId) is supposed to be ContainerIds::NONE (-1) but it appears
-			// either pocketmine or mojang wrongly encodes/decodes the packet. the same applies to 247 (windowType)
-			// which actually is WindowTypes::NONE (-9).
-			if(!$packet->server && $packet->windowId === 255 && $packet->windowType === 247){
+			// either pocketmine or mojang wrongly encodes/decodes the packet.
+			if(!$packet->serverInitiated && $packet->windowId === 255){
 				$player = $event->getOrigin()->getPlayer();
 				if($player !== null && $this->player_manager->getNullable($player)?->dispatcher !== null){
 					$event->cancel();
@@ -147,3 +163,4 @@ final class InvMenuEventHandler implements Listener{
 		}
 	}
 }
+
