@@ -116,8 +116,7 @@ final class PlayerWindowDispatcher{
 		}
 
 		assert($this->window_id !== null);
-		$session = $this->session->player->getNetworkSession();
-		$session->sendDataPacket(ContainerClosePacket::create($this->window_id, WindowTypes::CONTAINER, false));
+		$session->sendDataPacket(ContainerClosePacket::create($this->window_id, true));
 		$this->n_finalization_acks++;
 		foreach($this->packets as $packet){
 			$session->sendDataPacket($packet);
