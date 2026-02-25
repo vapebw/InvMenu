@@ -117,7 +117,13 @@ final class PlayerWindowDispatcher{
 
 		assert($this->window_id !== null);
 		$session = $this->session->player->getNetworkSession();
-		$session->sendDataPacket(ContainerClosePacket::create($this->window_id, true));
+
+		// VesperLobby Edit: Disable sending ContainerClosePacket here.
+		// Sending it right before opening a new container causes Bedrock clients (1.20+) 
+		// to trigger "PacketViolationWarningPacket" in the server console:
+		// "Server sent a ContainerClosePacket response packet when it should have sent the server initiated packet"
+		// $session->sendDataPacket(ContainerClosePacket::create($this->window_id, 255, false));
+
 		$this->n_finalization_acks++;
 		foreach($this->packets as $packet){
 			$session->sendDataPacket($packet);
